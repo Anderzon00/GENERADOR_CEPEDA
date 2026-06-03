@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -8,6 +8,11 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     
     <style>
+        /* Reseteo básico para evitar desbordes */
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             font-family: Arial, sans-serif;
             background-color: #e9ecef;
@@ -16,27 +21,35 @@
             align-items: center;
             padding: 20px;
             margin: 0;
+            min-height: 100vh;
+            justify-content: center; /* Centra verticalmente si hay espacio */
         }
 
-        /* Contenedor del Póster con Imagen Predeterminada */
+        /* Contenedor del Póster: Ahora es responsive */
         #poster-area {
             background-image: url('bg.jpg');
-            background-size: 100%;
+            background-size: cover; 
             background-position: center top;
             background-color: #ffffff;
-            width: 450px;
-            height: 600px;
+            
+            /* Hacemos que se adapte al ancho de la pantalla pero sin pasar de 450px */
+            width: 100%;
+            max-width: 450px;
+            /* Mantiene la proporción original de 450x600 (3:4) en cualquier pantalla */
+            aspect-ratio: 3 / 4; 
+            
             position: relative; 
             box-shadow: 0 10px 30px rgba(0,0,0,0.15);
             overflow: hidden;
+            border-radius: 8px; /* Borde ligeramente redondeado para estética */
         }
 
         /* Contenedor de todo el texto (Nombre + Hashtag) */
         .text-container {
             position: absolute;
             width: 100%;
-            /* AQUÍ ESTÁ EL CAMBIO: Subimos el texto a 180px (aprox 30% de la altura total) */
-            bottom: 55px; 
+            /* Usamos porcentaje para que mantenga la posición relativa al reducirse en móviles */
+            bottom: 9%; 
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -51,7 +64,7 @@
 
         .multicolor-text {
             font-family: 'Archivo Black', sans-serif;
-            font-size: 105px; 
+            font-size: 105px; /* Tamaño base, el JS lo ajustará */
             line-height: 0.8;
             letter-spacing: -0.06em;
             transform: scaleY(1.1);
@@ -67,38 +80,44 @@
         .hashtag-text {
             font-family: 'Arial', sans-serif;
             font-weight: 900;
-            font-size: 24px;
+            /* Usamos 'cqi' o unidades de vista para que el hashtag también escale un poco, o un tamaño fijo prudente */
+            font-size: clamp(16px, 5vw, 24px); 
             color: #93328E;
             margin-top: 15px; 
             letter-spacing: 0.5px;
         }
 
-        /* Panel de Controles movido abajo */
+        /* Panel de Controles adaptativo */
         .controls {
             background: white;
             padding: 20px;
             border-radius: 10px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            margin-top: 20px; /* Cambiado de margin-bottom a margin-top */
+            margin-top: 20px; 
+            
             display: flex;
+            flex-wrap: wrap; /* Permite que el input y el botón se apilen en pantallas muy pequeñas */
             gap: 15px;
             justify-content: center;
             align-items: center;
-            max-width: 600px;
+            
+            width: 100%;
+            max-width: 450px; /* Mismo ancho máximo que el póster para que se vea alineado */
         }
 
         input[type="text"] {
-            padding: 10px;
-            font-size: 1.2rem;
+            padding: 12px;
+            font-size: 1.1rem;
             border: 2px solid #ccc;
             border-radius: 5px;
             text-align: center;
             text-transform: uppercase;
-            width: 250px;
+            flex: 1 1 200px; /* Flexbox: permite que el input crezca y se adapte al espacio */
+            min-width: 0; /* Evita que rompa el contenedor en móviles */
         }
 
         button {
-            padding: 10px 20px;
+            padding: 12px 20px;
             font-size: 1rem;
             font-weight: bold;
             color: white;
@@ -107,6 +126,8 @@
             border-radius: 5px;
             cursor: pointer;
             transition: background 0.3s;
+            flex: 0 1 auto;
+            white-space: nowrap;
         }
 
         button:hover {
@@ -136,13 +157,15 @@
         const colors = ['#E9910D', '#214088', '#E72400', '#00882B', '#93328E'];
 
         function adjustFontSize() {
+            // Obtenemos el ancho actual del contenedor (que ahora es dinámico)
             const maxWidth = document.querySelector('.text-wrapper').clientWidth; 
-            let currentSize = 105; 
+            // Empezamos con un tamaño basado en el ancho del póster para que escale mejor
+            let currentSize = document.getElementById('poster-area').clientWidth * 0.23; 
             
             output.style.fontSize = currentSize + 'px';
 
-            while (output.scrollWidth > maxWidth && currentSize > 20) {
-                currentSize -= 2;
+            while (output.scrollWidth > maxWidth && currentSize > 10) {
+                currentSize -= 1;
                 output.style.fontSize = currentSize + 'px';
             }
         }
@@ -163,17 +186,24 @@
             adjustFontSize();
         }
 
+        // Renderizado inicial
         renderText(input.value);
 
-        // Event listener para actualizar en tiempo real
+        // Event listener para actualizar al escribir
         input.addEventListener('input', (e) => {
             renderText(e.target.value.toUpperCase());
         });
 
+        // RE-CALCULAR tamaño de letra si el usuario gira el celular o redimensiona la pantalla
+        window.addEventListener('resize', () => {
+            renderText(input.value.toUpperCase());
+        });
+
         function downloadPoster() {
             const poster = document.getElementById('poster-area');
+            
             html2canvas(poster, {
-                scale: 2, 
+                scale: 2, // Mantiene alta calidad en la descarga
                 useCORS: true,
                 backgroundColor: "#ffffff"
             }).then(canvas => {
